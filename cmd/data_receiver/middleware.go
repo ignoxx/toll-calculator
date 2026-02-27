@@ -7,17 +7,17 @@ import (
 	"github.com/ignoxx/toll-calculator/types"
 )
 
-type LogProducer struct {
+type LogMiddleware struct {
 	next DataProducer
 }
 
-func NewLogProducer(next DataProducer) DataProducer {
-	return &LogProducer{
+func NewLogMiddleware(next DataProducer) DataProducer {
+	return &LogMiddleware{
 		next: next,
 	}
 }
 
-func (p *LogProducer) Produce(obuData types.ObuData) error {
+func (p *LogMiddleware) Produce(obuData types.ObuData) error {
 	start := time.Now()
 	defer func() {
 		slog.Info("producing to kafka",
@@ -31,6 +31,6 @@ func (p *LogProducer) Produce(obuData types.ObuData) error {
 	return p.next.Produce(obuData)
 }
 
-func (p *LogProducer) Close() {
+func (p *LogMiddleware) Close() {
 	p.next.Close()
 }

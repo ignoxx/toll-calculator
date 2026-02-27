@@ -26,7 +26,7 @@ func main() {
 	}
 
 	s := DataReceiver{
-		producer: NewLogProducer(kafkaProducer),
+		producer: NewLogMiddleware(kafkaProducer),
 	}
 
 	defer s.producer.Close()
