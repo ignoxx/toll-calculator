@@ -1,0 +1,85 @@
+package main
+
+import (
+	"context"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"log/slog"
+	"time"
+
+	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
+	"github.com/ignoxx/toll-calculator/types"
+)
+
+type KafkaConsumer struct {
+	consumer    *kafka.Consumer
+	calcService CalculatorServicer
+	aggClient   any
+	isRunning   bool
+}
+
+func NewKafkaConsumer(topic string, svc CalculatorServicer, aggClient any) (*KafkaConsumer, error) {
+	c, err := kafka.NewConsumer(&kafka.ConfigMap{
+		"bootstrap.servers": "localhost",
+		"group.id":          "myGroup",
+		"auto.offset.reset": "earliest",
+	})
+
+	if err != nil {
+		return nil, errors.New("failed to create Kafka consumer: " + err.Error())
+	}
+
+	err = c.SubscribeTopics([]string{topic}, nil)
+
+	if err != nil {
+		return nil, errors.New("failed to subscribe to topic: " + err.Error())
+	}
+
+	return &KafkaConsumer{
+		consumer:    c,
+		calcService: svc,
+		aggClient:   aggClient,
+	}, nil
+}
+
+func (k *KafkaConsumer) Start() {
+	slog.Info("starting Kafka consumer")
+	k.isRunning = true
+	k.readMessageLoop()
+}
+
+func (k *KafkaConsumer) Close() {
+	k.isRunning = false
+}
+
+func (k *KafkaConsumer) readMessageLoop() {
+	defer k.consumer.Close()
+
+	for k.isRunning {
+		msg, err := k.consumer.ReadMessage(-1)
+
+		if err != nil {
+			slog.Error("failed to read message from Kafka", "err", err)
+			continue
+		}
+
+		var data types.ObuData
+		if err := json.Unmarshal(msg.Value, &data); err != nil {
+			fmt.Printf("Failed to unmarshal message: %v\n", err)
+			continue
+		}
+
+		req := &types.AggregateRequest{
+			Value:     distance,
+			Timestamp: time.Now().UnixNano(),
+			ObuID:     data.ObuID,
+		}
+
+		if err := c.aggClient.Aggregate(context.Background(), req); err != nil {
+			slog.Error("failed to send aggregate request", "err", err)
+			continue
+		}
+	}
+
+}
