@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -9,17 +8,18 @@ import (
 	"time"
 
 	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
+	"github.com/ignoxx/toll-calculator/cmd/aggregator/client"
 	"github.com/ignoxx/toll-calculator/types"
 )
 
 type KafkaConsumer struct {
 	consumer    *kafka.Consumer
 	calcService CalculatorServicer
-	aggClient   any
+	aggClient   *client.Client
 	isRunning   bool
 }
 
-func NewKafkaConsumer(topic string, svc CalculatorServicer, aggClient any) (*KafkaConsumer, error) {
+func NewKafkaConsumer(topic string, svc CalculatorServicer, aggClient *client.Client) (*KafkaConsumer, error) {
 	c, err := kafka.NewConsumer(&kafka.ConfigMap{
 		"bootstrap.servers": "localhost",
 		"group.id":          "myGroup",
@@ -70,13 +70,21 @@ func (k *KafkaConsumer) readMessageLoop() {
 			continue
 		}
 
-		req := &types.AggregateRequest{
+		distance, err := k.calcService.CalculateDistance(data)
+		if err != nil {
+			slog.Error("failed to calculate distance", "err", err)
+			continue
+		}
+
+		req := types.Distance{
 			Value:     distance,
 			Timestamp: time.Now().UnixNano(),
 			ObuID:     data.ObuID,
 		}
 
-		if err := c.aggClient.Aggregate(context.Background(), req); err != nil {
+		slog.Info("calculated distance", "obu_id", data.ObuID, "distance", distance)
+
+		if err := k.aggClient.AggregateInvoice(req); err != nil {
 			slog.Error("failed to send aggregate request", "err", err)
 			continue
 		}

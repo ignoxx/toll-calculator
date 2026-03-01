@@ -6,3 +6,9 @@ type ObuData struct {
 	Long      float64 `json:"long"`
 	RequestID int     `json:"requestId"`
 }
+
+type Distance struct {
+	Value     float64 `json:"value"`
+	ObuID     int     `json:"obuId"`
+	Timestamp int64   `json:"timestamp"`
+}
