@@ -4,10 +4,7 @@ import "github.com/ignoxx/toll-calculator/types"
 
 type Aggregator interface {
 	AggregateDistance(types.Distance) error
-}
-
-type Storer interface {
-	Insert(distance types.Distance) error
+	CalculateInvoice(ObuID) (types.Invoice, error)
 }
 
 type InvoiceAggregator struct {
@@ -22,4 +19,8 @@ func NewInvoiceAggregator(store Storer) Aggregator {
 
 func (i *InvoiceAggregator) AggregateDistance(distance types.Distance) error {
 	return i.store.Insert(distance)
+}
+
+func (i *InvoiceAggregator) CalculateInvoice(obuId ObuID) (types.Invoice, error) {
+	return i.store.GetInvoice(obuId)
 }

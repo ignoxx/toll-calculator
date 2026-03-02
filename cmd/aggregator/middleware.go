@@ -30,3 +30,14 @@ func (p *LogMiddleware) AggregateDistance(distance types.Distance) error {
 
 	return p.next.AggregateDistance(distance)
 }
+
+func (p *LogMiddleware) CalculateInvoice(obuId ObuID) (types.Invoice, error) {
+	start := time.Now()
+	defer func() {
+		slog.Info("getting invoice",
+			"obuId", obuId,
+			"took", time.Since(start),
+		)
+	}()
+	return p.next.CalculateInvoice(obuId)
+}

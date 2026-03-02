@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+option go_package = "github.com/ignoxx/toll-calculator/types";
+
+service DistanceAggregator {
+  rpc AggregateDistance(AggDistanceReq) returns (None);
+}
+
+message None {}
+
+message AggDistanceReq {
+  int32 ObuId = 1;
+  double Value = 2;
+  int64 Timestamp = 3;
+}
