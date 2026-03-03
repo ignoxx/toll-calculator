@@ -2,6 +2,8 @@ package main
 
 import (
 	"log/slog"
+	"math"
+	"math/rand"
 	"net/http"
 
 	"github.com/gorilla/websocket"
@@ -56,6 +58,8 @@ func (s *DataReceiver) wsUpgrade(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// TODO: validate data
+
+		obuData.RequestID = rand.Intn(math.MaxInt)
 
 		_ = s.producer.Produce(obuData)
 

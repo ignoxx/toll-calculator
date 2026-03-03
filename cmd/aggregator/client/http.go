@@ -5,9 +5,11 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/ignoxx/toll-calculator/types"
+	"github.com/sirupsen/logrus"
 )
 
 type HTTPClient struct {
@@ -41,4 +43,33 @@ func (c *HTTPClient) Aggregate(ctx context.Context, aggReq *types.AggDistanceReq
 	}
 
 	return nil
+}
+
+func (c *HTTPClient) GetInvoice(ctx context.Context, id int) (types.Invoice, error) {
+	invReq := types.GetInvoiceReq{
+		ObuId: int32(id),
+	}
+	b, err := json.Marshal(&invReq)
+	if err != nil {
+		return types.Invoice{}, err
+	}
+	endpoint := fmt.Sprintf("%s/%s?obu=%d", c.Endpoint, "invoice", id)
+	logrus.Infof("requesting get invoice -> %s", endpoint)
+	req, err := http.NewRequest("POST", endpoint, bytes.NewReader(b))
+	if err != nil {
+		return types.Invoice{}, err
+	}
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return types.Invoice{}, err
+	}
+	if resp.StatusCode != http.StatusOK {
+		return types.Invoice{}, fmt.Errorf("the service responded with non 200 status code %d", resp.StatusCode)
+	}
+	var inv types.Invoice
+	if err := json.NewDecoder(resp.Body).Decode(&inv); err != nil {
+		return types.Invoice{}, err
+	}
+	defer resp.Body.Close()
+	return inv, nil
 }

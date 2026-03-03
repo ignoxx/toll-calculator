@@ -8,4 +8,5 @@ import (
 
 type Client interface {
 	Aggregate(context.Context, *types.AggDistanceReq) error
+	GetInvoice(context.Context, int) (types.Invoice, error)
 }

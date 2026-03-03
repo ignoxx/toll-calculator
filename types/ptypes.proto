@@ -13,3 +13,8 @@ message AggDistanceReq {
   double Value = 2;
   int64 Timestamp = 3;
 }
+
+
+message GetInvoiceReq {
+  int32 ObuId = 1;
+}

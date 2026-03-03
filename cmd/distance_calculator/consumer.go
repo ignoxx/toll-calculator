@@ -73,7 +73,7 @@ func (k *KafkaConsumer) readMessageLoop() {
 
 		distance, err := k.calcService.CalculateDistance(data)
 		if err != nil {
-			slog.Error("failed to calculate distance", "err", err)
+			slog.Error("failed to calculate distance", "requestID", data.RequestID, "err", err)
 			continue
 		}
 
@@ -83,10 +83,10 @@ func (k *KafkaConsumer) readMessageLoop() {
 			ObuId:     int32(data.ObuID),
 		}
 
-		slog.Info("calculated distance", "obu_id", data.ObuID, "distance", distance)
+		slog.Info("calculated distance", "requestID", data.RequestID, "obu_id", data.ObuID, "distance", distance)
 
 		if err := k.aggClient.Aggregate(context.TODO(), req); err != nil {
-			slog.Error("failed to send aggregate request", "err", err)
+			slog.Error("failed to send aggregate request", "requestID", data.RequestID, "err", err)
 			continue
 		}
 	}
